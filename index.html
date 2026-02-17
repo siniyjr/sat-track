@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sat-Track - Отслеживание спутников</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(ellipse at center, #0c0c1a 0%, #16213e 100%);
+            color: #e0f7fa;
+            overflow: hidden;
+            height: 100vh;
+            touch-action: none;
+        }
+        
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 15px 10px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 15px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+            max-height: 360px;
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+        
+        .tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 10px 8px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn.active {
+            color: #4facfe;
+            background: rgba(79, 172, 254, 0.2);
+            font-weight: bold;
+        }
+        
+        .tab-btn:hover:not(.active) {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab-content {
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+            line-height: 1.5;
+            max-height: 300px;
+        }
+        
+        .info-section {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .info-section h4 {
+            color: #00f2fe;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        
+        .satellite-count {
+            position: absolute;
+            top: 15px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .zoom-info {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: right;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            color: white;
+            font-size: 1.1rem;
+            text-align: center;
+            width: 200px;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 15px;
+            right: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-btn {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+        }
+        
+        .control-btn:hover {
+            background: rgba(79, 172, 254, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .coordinate-label {
+            position: absolute;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
+            pointer-events: none;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 3px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+        
+        @media (min-width: 769px) {
+            .header h1 { font-size: 2.2rem; }
+            .header p { font-size: 1rem; max-width: 500px; }
+            .info-panel { max-height: 400px; }
+            .tab-btn { padding: 12px 15px; font-size: 0.9rem; }
+            .tab-content { padding: 20px; font-size: 1rem; max-height: 340px; }
+            .controls { gap: 10px; }
+            .control-btn { padding: 10px 15px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sat-Track</h1>
+        <p>Отслеживание спутников и космического мусора</p>
+    </div>
+    
+    <div class="satellite-count">
+        <span id="satCount">Спутники: 0</span> | 
+        <span id="debrisCount">Мусор: 0</span>
+    </div>
+    
+    <div class="zoom-info" id="zoomInfo">Масштаб: LEO<br>(до 2000 км)</div>
+    
+    <div id="scene-container"></div>
+    
+    <div class="info-panel">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('basic')">Основное</button>
+            <button class="tab-btn" onclick="switchTab('detailed')" id="detailedTab" style="display: none;">Подробно</button>
+            <button class="tab-btn" onclick="switchTab('status')">Состояние</button>
+            <button class="tab-btn" onclick="switchTab('orbital')">Орбита</button>
+        </div>
+        <div class="tab-content" id="tabContent">
+            <h2 id="satellite-name" style="font-size: 1.2rem; margin-bottom: 10px;">Выберите объект</h2>
+            <div id="satellite-info">
+                Нажмите на спутник или мусор для информации
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="control-btn" onclick="resetView()">Сброс</button>
+        <button class="control-btn" onclick="toggleRotation()">Пауза</button>
+    </div>
+    
+    <div class="loading" id="loading">Загрузка...</div>
+
+    <script>
+        // Реальные данные спутников
+        const satellitesData = [
+            {
+                name: "ISS (ZARYA)",
+                type: "Орбитальная станция",
+                altitude: 420,
+                inclination: 51.6428,
+                period: 92.7,
+                operator: "NASA/Roscosmos/ESA/JAXA/CSA",
+                launchDate: "20 ноября 1998",
+                launchVehicle: "Протон-К",
+                launchSite: "Байконур, Казахстан",
+                mass: "419,725 кг",
+                dimensions: "109 м × 73 м × 45 м",
+                power: "120 кВт (солнечные панели)",
+                crew: "3-7 человек",
+                orbitType: "LEO",
+                lifetime: "До 2030 года",
+                cost: "$150 миллиардов",
+                purpose: "Научные исследования в условиях микрогравитации, международное сотрудничество, тестирование технологий",
+                interestingFacts: "Видима невооруженным глазом как яркая звезда. Облетает Землю каждые 90 минут. На борту более 300 экспериментов одновременно.",
+                currentStatus: "Активна",
+                recentEvents: "Регулярные маневры уклонения от космического мусора. Последний маневр: январь 2026.",
+                signal: "95%",
+                battery: "88%",
+                temperature: "-10°C",
+                health: "Исправна",
+                missionPhase: "Операционная фаза"
+            },
+            {
+                name: "HUBBLE SPACE TELESCOPE",
+                type: "Научный",
+                altitude: 540,
+                inclination: 28.4699,
+                period: 95.4,
+                operator: "NASA/ESA",
+                launchDate: "24 апреля 1990",
+                launchVehicle: "Space Shuttle Discovery (STS-31)",
+                launchSite: "Кейп-Канаверал, США",
+                mass: "11,110 кг",
+                dimensions: "13.2 м × 4.2 м диаметр",
+                power: "2.8 кВт (солнечные панели)",
+                crew: "Без экипажа",
+                orbitType: "LEO",
+                lifetime: "1990-настоящее время",
+                cost: "$2.5 миллиарда (запуск) + $10 миллиардов (обслуживание)",
+                purpose: "Астрономические наблюдения в видимом, ультрафиолетовом и ближнем инфракрасном диапазонах",
+                interestingFacts: "Сделал более 1.5 миллиона наблюдений. Помог определить возраст Вселенной (13.8 млрд лет). Орбита постепенно снижается из-за атмосферного торможения.",
+                currentStatus: "Активен",
+                recentEvents: "Последнее обслуживание: май 2009 года. Ожидается работа до 2030-2040 годов.",
+                signal: "98%",
+                battery: "92%",
+                temperature: "-90°C",
+                health: "Ограниченная функциональность",
+                missionPhase: "Финальная фаза"
+            },
+            {
+                name: "STARLINK-1234",
+                type: "Коммуникационный",
+                altitude: 550,
+                inclination: 53.0,
+                period: 95.0,
+                operator: "SpaceX",
+                launchDate: "Май 2019",
+                launchVehicle: "Falcon 9",
+                launchSite: "Кейп-Канаверал, США",
+                mass: "260 кг",
+                dimensions: "3.1 м с развернутыми панелями",
+                power: "2 кВт (солнечные панели)",
+                crew: "Без экипажа",
+                orbitType: "LEO",
+                lifetime: "5 лет",
+                cost: "$2,500 за единицу",
+                purpose: "Обеспечение высокоскоростного интернета по всему миру, особенно в удаленных районах",
+                interestingFacts: "По состоянию на 2026 год созвездие насчитывает более 5,000 спутников. Использует ионные двигатели для коррекции орбиты. Может автономно уклоняться от мусора.",
+                currentStatus: "Активен",
+                recentEvents: "Постоянное расширение созвездия. План до 42,000 спутников.",
+                signal: "87%",
+                battery: "78%",
+                temperature: "-120°C",
+                health: "Исправен",
+                missionPhase: "Развертывание"
+            },
+            {
+                name: "GPS IIF-10 (PRN 01)",
+                type: "Навигационный",
+                altitude: 20200,
+                inclination: 55.0,
+                period: 718.0,
+                operator: "US Space Force",
+                launchDate: "17 февраля 2016",
+                launchVehicle: "Atlas V 401",
+                launchSite: "Кейп-Канаверал, США",
+                mass: "1,633 кг",
+                dimensions: "5.3 м с развернутыми панелями",
+                power: "2.5 кВт (солнечные панели)",
+                crew: "Без экипажа",
+                orbitType: "MEO",
+                lifetime: "12 лет",
+                cost: "$200 миллионов",
+                purpose: "Обеспечение точного позиционирования и навигации для военных и гражданских пользователей",
+                interestingFacts: "Сигналы GPS используются не только для навигации, но и для синхронизации времени в финансовых системах и энергосетях.",
+                currentStatus: "Активен",
+                recentEvents: "Часть модернизированного созвездия GPS Block IIF. Обеспечивает улучшенную точность и надежность.",
+                signal: "99%",
+                battery: "88%",
+                temperature: "-150°C",
+                health: "Исправен",
+                missionPhase: "Операционная фаза"
+            },
+            {
+                name: "GOES-16",
+                type: "Метеорологический",
+                altitude: 35786,
+                inclination: 0.0,
+                period: 1436.0,
+                operator: "NOAA/NASA",
+                launchDate: "19 ноября 2016",
+                launchVehicle: "Atlas V 541",
+                launchSite: "Кейп-Канаверал, США",
+                mass: "5,192 кг",
+                dimensions: "6.1 м с развернутыми панелями",
+                power: "4 кВт (солнечные панели)",
+                crew: "Без экипажа",
+                orbitType: "GEO",
+                lifetime: "15 лет",
+                cost: "$1.1 миллиарда",
+                purpose: "Мониторинг погоды, климата, океанов и космической погоды в реальном времени",
+                interestingFacts: "Может делать снимки всей Земного диска каждые 10 минут и отдельных регионов каждые 30 секунд. Обнаруживает молнии и пыльные бури.",
+                currentStatus: "Активен",
+                recentEvents: "Основной спутник для наблюдения за ураганами в Атлантике. Заменил GOES-13 в 2017 году.",
+                signal: "96%",
+                battery: "90%",
+                temperature: "-180°C",
+                health: "Исправен",
+                missionPhase: "Операционная фаза"
+            }
+        ];
+
+        // Глобальные переменные
+        let scene, camera, renderer, earth, sun, stars;
+        let satellites = [], debrisObjects = [];
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let isRotating = true;
+        let selectedObject = null;
+        let coordinateLabel = null;
+        let currentTab = 'basic';
+        
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraRadius = 20;
+        let cameraPolarAngle = Math.PI / 2;
+        let cameraAzimuthalAngle = 0;
+        
+        // Текущий уровень масштаба
+        let currentZoomLevel = 'leo'; // leo, meo, geo
+        
+        function init() {
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            updateCameraPosition();
+            
+            const pixelRatio = Math.min(window.devicePixelRatio, 2);
+            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+            renderer.setPixelRatio(pixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('scene-container').appendChild(renderer.domElement);
+            
+            createStars();
+            createSun();
+            createEarth();
+            createSatellites();
+            createDebris();
+            
+            setupEventListeners();
+            createCoordinateLabel();
+            
+            document.getElementById('loading').style.display = 'none';
+            updateCounters();
+            animate();
+        }
+        
+        function createStars() {
+            const starCount = 3000;
+            const positions = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount * 3; i += 3) {
+                const radius = 100 + Math.random() * 50;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                
+                positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i + 2] = radius * Math.cos(phi);
+            }
+            
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({ 
+                color: 0xffffff, 
+                size: 1.2, 
+                sizeAttenuation: true 
+            });
+            
+            stars = new THREE.Points(geometry, material);
+            scene.add(stars);
+        }
+        
+        function createSun() {
+            // Солнце на реальном месте (вне сцены)
+            const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffaa00,
+                emissive: 0xff6600,
+                emissiveIntensity: 0.8
+            });
+            
+            sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            sun.position.set(250, 150, 250); // Далеко от Земли
+            scene.add(sun);
+            
+            // Направленный свет от Солнца
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            sunLight.position.copy(sun.position);
+            sunLight.target.position.set(0, 0, 0); // Свет направлен на центр
+            scene.add(sunLight);
+            scene.add(sunLight.target); // Важно: цель должна быть в сцене
+        }
+        
+        function createEarth() {
+            const geometry = new THREE.SphereGeometry(5, 32, 32);
+            const textureLoader = new THREE.TextureLoader();
+            
+            const earthTexture = textureLoader.load(
+                'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+                undefined,
+                undefined,
+                (err) => console.log('Ошибка загрузки текстуры:', err)
+            );
+            
+            const earthMaterial = new THREE.MeshPhongMaterial({
+                map: earthTexture,
+                shininess: 5
+            });
+            
+            earth = new THREE.Mesh(geometry, earthMaterial);
+            scene.add(earth);
+        }
+        
+        function createSatellites() {
+            const colors = [0x4facfe, 0x00f2fe, 0xff6b6b, 0x4ecdc4, 0xffd166];
+            
+            satellitesData.forEach((data, index) => {
+                const speed = (2 * Math.PI) / (data.period * 60);
+                const radius = 5 + (data.altitude / 1000);
+                
+                const geometry = new THREE.SphereGeometry(0.25, 8, 8);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: colors[index % colors.length],
+                    emissive: colors[index % colors.length],
+                    emissiveIntensity: 0.3
+                });
+                
+                const satellite = new THREE.Mesh(geometry, material);
+                satellite.userData = { 
+                    ...data,
+                    radius: radius,
+                    speed: speed,
+                    angle: Math.random() * Math.PI * 2,
+                    lastUpdate: Date.now()
+                };
+                satellite.name = data.name;
+                updateSatellitePosition(satellite);
+                scene.add(satellite);
+                satellites.push(satellite);
+            });
+        }
+        
+        function createDebris() {
+            for (let i = 0; i < 25; i++) {
+                const size = Math.random() * 0.15 + 0.08;
+                const geometry = new THREE.BoxGeometry(size, size, size);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff6b6b,
+                    emissive: 0x333333,
+                    emissiveIntensity: 0.2
+                });
+                
+                const altitude = 400 + Math.random() * 1600;
+                const radius = 5 + (altitude / 1000);
+                const period = 90 + Math.random() * 30;
+                const speed = (2 * Math.PI) / (period * 60);
+                
+                const debris = new THREE.Mesh(geometry, material);
+                debris.userData = { 
+                    type: 'debris',
+                    radius: Math.max(5.4, radius),
+                    speed: speed,
+                    angle: Math.random() * Math.PI * 2,
+                    altitude: Math.round(altitude),
+                    name: `Обломок ${i + 1}`,
+                    lastUpdate: Date.now(),
+                    mass: `${(Math.random() * 100 + 1).toFixed(1)} кг`,
+                    dangerLevel: Math.random() > 0.7 ? "Высокий" : Math.random() > 0.4 ? "Средний" : "Низкий",
+                    velocity: `${Math.floor(Math.random() * 5000 + 25000)} км/ч`,
+                    collisionRisk: Math.random() > 0.8 ? "Высокий" : "Низкий"
+                };
+                
+                updateDebrisPosition(debris);
+                scene.add(debris);
+                debrisObjects.push(debris);
+            }
+        }
+        
+        function updateSatellitePosition(satellite) {
+            const userData = satellite.userData;
+            const now = Date.now();
+            const deltaTime = (now - userData.lastUpdate) / 1000;
+            userData.angle += userData.speed * deltaTime;
+            userData.lastUpdate = now;
+            
+            const x = Math.cos(userData.angle) * userData.radius;
+            const z = Math.sin(userData.angle) * userData.radius;
+            satellite.position.set(x, 0, z);
+        }
+        
+        function updateDebrisPosition(debris) {
+            const userData = debris.userData;
+            const now = Date.now();
+            const deltaTime = (now - userData.lastUpdate) / 1000;
+            userData.angle += userData.speed * deltaTime;
+            userData.lastUpdate = now;
+            
+            const x = Math.cos(userData.angle) * userData.radius;
+            const z = Math.sin(userData.angle) * userData.radius;
+            const y = Math.sin(userData.angle * 3) * 0.5;
+            debris.position.set(x, y, z);
+        }
+        
+        function createCoordinateLabel() {
+            coordinateLabel = document.createElement('div');
+            coordinateLabel.className = 'coordinate-label';
+            coordinateLabel.style.display = 'none';
+            document.body.appendChild(coordinateLabel);
+        }
+        
+        function updateCoordinateLabel(object) {
+            if (!coordinateLabel || !isRotating) return;
+            
+            const vector = object.position.clone();
+            vector.project(camera);
+            
+            if (Math.abs(vector.x) > 1.5 || Math.abs(vector.y) > 1.5 || vector.z > 1 || vector.z < -1) {
+                coordinateLabel.style.display = 'none';
+                return;
+            }
+            
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+            coordinateLabel.style.left = (x + 8) + 'px';
+            coordinateLabel.style.top = (y - 8) + 'px';
+            
+            const userData = object.userData;
+            const lat = (Math.sin(userData.angle) * 90).toFixed(1);
+            const lon = (Math.cos(userData.angle) * 180).toFixed(1);
+            coordinateLabel.innerHTML = `${lat}°, ${lon}°<br>${userData.altitude} км`;
+            coordinateLabel.style.display = 'block';
+        }
+        
+        function hideCoordinateLabel() {
+            if (coordinateLabel) coordinateLabel.style.display = 'none';
+        }
+        
+        function updateCameraPosition() {
+            cameraPolarAngle = Math.max(0.2, Math.min(Math.PI - 0.2, cameraPolarAngle));
+            const x = cameraRadius * Math.sin(cameraPolarAngle) * Math.cos(cameraAzimuthalAngle);
+            const y = cameraRadius * Math.cos(cameraPolarAngle);
+            const z = cameraRadius * Math.sin(cameraPolarAngle) * Math.sin(cameraAzimuthalAngle);
+            camera.position.set(x, y, z);
+            camera.lookAt(0, 0, 0);
+        }
+        
+        function setupEventListeners() {
+            const canvas = renderer.domElement;
+            
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 0) {
+                    isDragging = true;
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                    canvas.style.cursor = 'grabbing';
+                }
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+                    
+                    cameraAzimuthalAngle += deltaX * 0.01;
+                    cameraPolarAngle -= deltaY * 0.01;
+                    
+                    updateCameraPosition();
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                }
+            });
+            
+            canvas.addEventListener('mouseup', () => {
+                isDragging = false;
+                canvas.style.cursor = 'grab';
+            });
+            
+            canvas.addEventListener('click', handleClick);
+            canvas.addEventListener('wheel', handleWheel);
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                if (selectedObject) updateCoordinateLabel(selectedObject);
+            });
+            
+            canvas.style.cursor = 'grab';
+        }
+        
+        function handleWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 1 : -1;
+            cameraRadius += delta * 2;
+            cameraRadius = Math.max(8, Math.min(50, cameraRadius));
+            updateCameraPosition();
+            
+            // Обновление уровня масштаба
+            if (cameraRadius <= 15) {
+                currentZoomLevel = 'geo';
+                document.getElementById('zoomInfo').innerHTML = 'Масштаб: GEO<br>(до 36000 км)';
+            } else if (cameraRadius <= 25) {
+                currentZoomLevel = 'meo';
+                document.getElementById('zoomInfo').innerHTML = 'Масштаб: LEO+MEO<br>(до 23000 км)';
+            } else {
+                currentZoomLevel = 'leo';
+                document.getElementById('zoomInfo').innerHTML = 'Масштаб: LEO<br>(до 2000 км)';
+            }
+            
+            // Показываем/скрываем спутники по уровню масштаба
+            updateSatelliteVisibility();
+        }
+        
+        function updateSatelliteVisibility() {
+            satellites.forEach(sat => {
+                if (currentZoomLevel === 'leo') {
+                    sat.visible = sat.userData.altitude <= 2000;
+                } else if (currentZoomLevel === 'meo') {
+                    sat.visible = sat.userData.altitude <= 23000;
+                } else {
+                    sat.visible = true;
+                }
+            });
+            
+            debrisObjects.forEach(deb => {
+                if (currentZoomLevel === 'leo') {
+                    deb.visible = deb.userData.altitude <= 2000;
+                } else if (currentZoomLevel === 'meo') {
+                    deb.visible = deb.userData.altitude <= 23000;
+                } else {
+                    deb.visible = true;
+                }
+            });
+        }
+        
+        function handleClick(e) {
+            if (isDragging) return;
+            
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            
+            const allObjects = [...satellites, ...debrisObjects];
+            const intersects = raycaster.intersectObjects(allObjects);
+            
+            if (intersects.length > 0) {
+                const clickedObject = intersects[0].object;
+                showSatelliteInfo(clickedObject);
+                highlightSelected(clickedObject);
+                updateCoordinateLabel(clickedObject);
+            } else {
+                clearSelection();
+                showDefaultInfo();
+                hideCoordinateLabel();
+            }
+        }
+        
+        function showSatelliteInfo(object) {
+            const data = object.userData;
+            const isSatellite = data.type !== 'debris';
+            const iconColor = isSatellite ? '#4facfe' : '#ff6b6b';
+            
+            const detailedTab = document.getElementById('detailedTab');
+            if (isSatellite) {
+                detailedTab.style.display = 'block';
+            } else {
+                detailedTab.style.display = 'none';
+                if (currentTab === 'detailed') {
+                    currentTab = 'basic';
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    document.querySelector('.tab-btn:first-child').classList.add('active');
+                }
+            }
+            
+            document.getElementById('satellite-name').innerHTML = data.name;
+            
+            if (currentTab === 'basic') {
+                if (isSatellite) {
+                    document.getElementById('satellite-info').innerHTML = `
+                        <strong>Тип:</strong> ${data.type}<br>
+                        <strong>Орбита:</strong> ${data.orbitType}<br>
+                        <strong>Высота:</strong> ${data.altitude} км<br>
+                        <strong>Наклонение:</strong> ${data.inclination.toFixed(2)}°<br>
+                        <strong>Период:</strong> ${data.period.toFixed(1)} мин<br>
+                        <strong>Оператор:</strong> ${data.operator}
+                    `;
+                } else {
+                    document.getElementById('satellite-info').innerHTML = `
+                        <strong>Тип:</strong> Космический мусор<br>
+                        <strong>Высота:</strong> ${data.altitude} км<br>
+                        <strong>Масса:</strong> ${data.mass}<br>
+                        <strong>Уровень опасности:</strong> ${data.dangerLevel}
+                    `;
+                }
+            } 
+            else if (currentTab === 'detailed' && isSatellite) {
+                document.getElementById('satellite-info').innerHTML = `
+                    <div class="info-section">
+                        <h4>🛰️ Основные параметры</h4>
+                        <strong>Тип:</strong> ${data.type}<br>
+                        <strong>Оператор:</strong> ${data.operator}<br>
+                        <strong>Статус:</strong> ${data.currentStatus}
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>📏 Орбитальные характеристики</h4>
+                        <strong>Высота орбиты:</strong> ${data.altitude} км<br>
+                        <strong>Наклонение:</strong> ${data.inclination.toFixed(2)}°<br>
+                        <strong>Период обращения:</strong> ${data.period.toFixed(1)} минут<br>
+                        <strong>Скорость:</strong> ${(27000 - data.altitude/10).toFixed(0)} км/ч
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>🔧 Технические характеристики</h4>
+                        <strong>Масса:</strong> ${data.mass}<br>
+                        <strong>Размеры:</strong> ${data.dimensions}<br>
+                        <strong>Энергоснабжение:</strong> ${data.power}<br>
+                        <strong>Экипаж:</strong> ${data.crew}
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>🚀 История запуска</h4>
+                        <strong>Дата запуска:</strong> ${data.launchDate}<br>
+                        <strong>Ракета-носитель:</strong> ${data.launchVehicle}<br>
+                        <strong>Космодром:</strong> ${data.launchSite}<br>
+                        <strong>Срок службы:</strong> ${data.lifetime}
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>🎯 Назначение и стоимость</h4>
+                        <strong>Цель:</strong> ${data.purpose}<br>
+                        <strong>Стоимость:</strong> ${data.cost}
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>✨ Интересные факты</h4>
+                        ${data.interestingFacts}
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>📰 Последние события</h4>
+                        ${data.recentEvents}
+                    </div>
+                `;
+            }
+            else if (currentTab === 'status') {
+                if (isSatellite) {
+                    document.getElementById('satellite-info').innerHTML = `
+                        <div class="info-section">
+                            <h4>📡 Состояние систем</h4>
+                            <strong>Состояние:</strong> ${data.health}<br>
+                            <strong>Сигнал связи:</strong> ${data.signal}<br>
+                            <strong>Заряд батареи:</strong> ${data.battery}<br>
+                            <strong>Температура:</strong> ${data.temperature}<br>
+                            <strong>Фаза миссии:</strong> ${data.missionPhase}
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>📈 Телеметрия</h4>
+                            <strong>Последняя телеметрия:</strong> ${new Date().toLocaleTimeString()}<br>
+                            <strong>Время полета:</strong> ${Math.floor(Math.random() * 10000)} дней
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('satellite-info').innerHTML = `
+                        <div class="info-section">
+                            <h4>⚠️ Состояние мусора</h4>
+                            <strong>Скорость:</strong> ${data.velocity}<br>
+                            <strong>Риск столкновения:</strong> ${data.collisionRisk}<br>
+                            <strong>Масса:</strong> ${data.mass}<br>
+                            <strong>Последнее обновление:</strong> ${new Date().toLocaleTimeString()}
+                        </div>
+                    `;
+                }
+            }
+            else if (currentTab === 'orbital') {
+                if (isSatellite) {
+                    document.getElementById('satellite-info').innerHTML = `
+                        <div class="info-section">
+                            <h4>📈 Анализ орбиты</h4>
+                            <strong>Тип орбиты:</strong> ${data.orbitType}<br>
+                            <strong>Высота:</strong> ${data.altitude} км<br>
+                            <strong>Наклонение:</strong> ${data.inclination.toFixed(2)}°<br>
+                            <strong>Период:</strong> ${data.period.toFixed(1)} мин<br>
+                            <strong>Скорость:</strong> ${(27000 - data.altitude/10).toFixed(0)} км/ч<br>
+                            <strong>Эксцентриситет:</strong> ${(Math.random() * 0.01).toFixed(4)}
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>🔄 Прогноз орбиты</h4>
+                            <strong>Следующий пролет:</strong> ${Math.floor(Math.random() * 60 + 10)} мин<br>
+                            <strong>Оборотов в сутки:</strong> ${(1440 / data.period).toFixed(1)}<br>
+                            <strong>Предполагаемый срок службы:</strong> ${data.lifetime}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('satellite-info').innerHTML = `
+                        <div class="info-section">
+                            <h4>مدار مشخصات</h4> <!-- Это персидский текст -->
+                            <strong>Тип:</strong> Неуправляемая орбита<br>
+                            <strong>Высота:</strong> ${data.altitude} км<br>
+                            <strong>Скорость:</strong> ${data.velocity}<br>
+                            <strong>Предполагаемое разрушение:</strong> Неопределено
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>⚠️ Анализ рисков</h4>
+                            <strong>Вероятность столкновения:</strong> ${data.collisionRisk}<br>
+                            <strong>Обнаруживаемость:</strong> ${(Math.random() > 0.3 ? 'Да' : 'Сложно')}<br>
+                            <strong>Статус слежения:</strong> ${(Math.random() > 0.2 ? 'Отслеживается' : 'Не отслеживается')}
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function showDefaultInfo() {
+            document.getElementById('satellite-name').textContent = 'Выберите объект';
+            document.getElementById('satellite-info').innerHTML = `
+                <p>Нажмите на спутник или мусор для информации.</p>
+                <div style="margin-top: 10px; font-size: 0.85rem; opacity: 0.7;">
+                    <p>🡅 Вращайте камеру, удерживая ЛКМ</p>
+                    <p>🡅 Приближайте/удаляйте колесом мыши</p>
+                </div>
+            `;
+            document.getElementById('detailedTab').style.display = 'none';
+            currentTab = 'basic';
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.tab-btn:first-child').classList.add('active');
+        }
+        
+        function highlightSelected(object) {
+            if (selectedObject) selectedObject.material.emissiveIntensity = 0.3;
+            object.material.emissiveIntensity = 0.8;
+            selectedObject = object;
+        }
+        
+        function clearSelection() {
+            if (selectedObject) selectedObject.material.emissiveIntensity = 0.3;
+            selectedObject = null;
+        }
+        
+        function updateCounters() {
+            document.getElementById('satCount').textContent = `Спутники: ${satellites.filter(s => s.visible).length}`;
+            document.getElementById('debrisCount').textContent = `Мусор: ${debrisObjects.filter(d => d.visible).length}`;
+        }
+        
+        function resetView() {
+            cameraRadius = 20;
+            cameraPolarAngle = Math.PI / 2;
+            cameraAzimuthalAngle = 0;
+            updateCameraPosition();
+        }
+        
+        function toggleRotation() {
+            isRotating = !isRotating;
+            if (!isRotating) hideCoordinateLabel();
+            else if (selectedObject) updateCoordinateLabel(selectedObject);
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            currentTab = tabName;
+            
+            if (selectedObject) showSatelliteInfo(selectedObject);
+            else showDefaultInfo();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isRotating) {
+                if (earth) earth.rotation.y += 0.002;
+                
+                // Солнце вращается по орбите (очень медленно)
+                if (sun) {
+                    const sunAngle = Date.now() * 0.00001;
+                    sun.position.x = 250 * Math.cos(sunAngle);
+                    sun.position.z = 250 * Math.sin(sunAngle);
+                    
+                    // Обновляем позицию света от Солнца
+                    const sunLight = scene.children.find(child => child.isDirectionalLight);
+                    if (sunLight) {
+                        sunLight.position.copy(sun.position);
+                    }
+                }
+                
+                satellites.forEach(sat => updateSatellitePosition(sat));
+                debrisObjects.forEach(deb => updateDebrisPosition(deb));
+                
+                if (selectedObject) updateCoordinateLabel(selectedObject);
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        window.onload = () => {
+            if (!window.WebGLRenderingContext) {
+                document.getElementById('loading').textContent = 'Ваш браузер не поддерживает WebGL';
+                return;
+            }
+            init();
+        };
+    </script>
+</body>
+</html>
+
