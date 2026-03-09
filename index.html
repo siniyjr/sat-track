@@ -137,41 +137,6 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;ov
 .loading-text{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
 
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(to bottom,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:999;}
-
-/* Quick Nav */
-#quick-nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:20;pointer-events:all;}
-#qnav-toggle{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;padding:7px 18px;background:rgba(5,15,30,0.92);border:1px solid var(--border);border-radius:20px;color:var(--accent);cursor:pointer;backdrop-filter:blur(12px);transition:all 0.2s;box-shadow:0 0 20px rgba(0,200,255,0.15);}
-#qnav-toggle:hover{background:rgba(0,200,255,0.12);box-shadow:0 0 30px rgba(0,200,255,0.25);}
-#qnav-panel{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:520px;background:rgba(4,12,26,0.97);border:1px solid var(--border);border-radius:8px;backdrop-filter:blur(20px);box-shadow:0 0 50px rgba(0,0,0,0.8),0 0 30px rgba(0,200,255,0.08);display:none;overflow:hidden;}
-#qnav-panel.open{display:block;animation:qnavIn 0.18s ease;}
-@keyframes qnavIn{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-#qnav-search-wrap{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
-#qnav-search{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;}
-#qnav-search::placeholder{color:var(--dim);}
-.qnav-search-icon{color:var(--accent);font-size:14px;flex-shrink:0;}
-#qnav-filters{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid rgba(0,200,255,0.08);flex-wrap:wrap;}
-.qnav-filter{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:12px;border:1px solid rgba(0,200,255,0.15);background:transparent;color:var(--dim);cursor:pointer;transition:all 0.15s;text-transform:uppercase;}
-.qnav-filter:hover{color:var(--text);}
-.qnav-filter.active{background:rgba(0,200,255,0.15);color:var(--accent);border-color:rgba(0,200,255,0.4);}
-.qnav-filter.f-station.active{background:rgba(0,255,159,0.12);color:#00ff9f;border-color:rgba(0,255,159,0.3);}
-.qnav-filter.f-science.active{background:rgba(68,170,255,0.12);color:#44aaff;border-color:rgba(68,170,255,0.3);}
-.qnav-filter.f-weather.active{background:rgba(0,200,255,0.12);color:#00c8ff;border-color:rgba(0,200,255,0.3);}
-.qnav-filter.f-nav.active{background:rgba(255,224,102,0.12);color:#ffe066;border-color:rgba(255,200,0,0.3);}
-.qnav-filter.f-military.active{background:rgba(255,64,96,0.12);color:#ff4060;border-color:rgba(255,64,96,0.3);}
-.qnav-filter.f-debris.active{background:rgba(255,96,48,0.12);color:#ff6030;border-color:rgba(255,96,48,0.3);}
-.qnav-filter.f-planet.active{background:rgba(255,224,0,0.12);color:#ffe066;border-color:rgba(255,200,0,0.3);}
-#qnav-list{max-height:260px;overflow-y:auto;padding:4px 0;}
-#qnav-list::-webkit-scrollbar{width:3px;}
-#qnav-list::-webkit-scrollbar-thumb{background:rgba(0,200,255,0.3);border-radius:2px;}
-.qnav-item{display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;transition:background 0.12s;border-bottom:1px solid rgba(0,200,255,0.04);}
-.qnav-item:hover{background:rgba(0,200,255,0.07);}
-.qnav-item:last-child{border-bottom:none;}
-.qnav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;box-shadow:0 0 5px currentColor;}
-.qnav-name{font-family:'Space Mono',monospace;font-size:11px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.qnav-meta{font-size:10px;color:var(--dim);white-space:nowrap;margin-left:auto;}
-.qnav-badge{font-size:9px;padding:1px 6px;border-radius:8px;margin-left:6px;letter-spacing:0.5px;}
-.qnav-empty{padding:20px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:1px;}
-
 </style>
 </head>
 <body>
@@ -258,6 +223,99 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <div class="info-row"><span class="info-key">RAAN</span><span class="info-val" id="d-raan">—</span></div>
   </div>
   <div class="tab-content" id="tab-3">
+
+    <!-- ── БЛОК: Актуальная орбитальная обстановка ── -->
+    <div id="orbital-stats-block" style="margin-bottom:12px;">
+      <div style="font-size:9px;letter-spacing:1.5px;color:var(--dim);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border);">ОРБИТАЛЬНАЯ ОБСТАНОВКА · 2025</div>
+
+      <!-- Четыре цифры -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
+        <div style="background:rgba(0,255,159,0.06);border:1px solid rgba(0,255,159,0.15);border-radius:6px;padding:7px 8px;text-align:center;">
+          <div style="font-size:17px;font-weight:700;color:#00ff9f;letter-spacing:0.5px;">8 300+</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;">активных спутников</div>
+        </div>
+        <div style="background:rgba(255,224,102,0.06);border:1px solid rgba(255,224,102,0.18);border-radius:6px;padding:7px 8px;text-align:center;">
+          <div style="font-size:17px;font-weight:700;color:#ffe066;letter-spacing:0.5px;">27 000+</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;">обломков &gt;10 см</div>
+        </div>
+        <div style="background:rgba(255,96,48,0.06);border:1px solid rgba(255,96,48,0.2);border-radius:6px;padding:7px 8px;text-align:center;">
+          <div style="font-size:17px;font-weight:700;color:#ff6030;letter-spacing:0.5px;">500 000+</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;">фрагментов &gt;1 см</div>
+        </div>
+        <div style="background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.15);border-radius:6px;padding:7px 8px;text-align:center;">
+          <div style="font-size:17px;font-weight:700;color:#00c8ff;letter-spacing:0.5px;">~9 200 т</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;">суммарная масса</div>
+        </div>
+      </div>
+
+      <!-- Зоны риска -->
+      <div style="font-size:9px;letter-spacing:1.2px;color:var(--dim);margin-bottom:5px;">КРИТИЧЕСКИЕ ОРБИТЫ</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:9px;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ff2040;flex-shrink:0;box-shadow:0 0 6px #ff2040;"></div>
+          <div style="font-size:10px;color:#ccc;flex:1;">300–600 км <span style="color:var(--dim)">(Starlink, ISS-зона)</span></div>
+          <div style="font-size:10px;color:#ff2040;font-weight:600;">КРИТ.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ff8020;flex-shrink:0;box-shadow:0 0 6px #ff8020;"></div>
+          <div style="font-size:10px;color:#ccc;flex:1;">600–1000 км <span style="color:var(--dim)">(ССО, разведка)</span></div>
+          <div style="font-size:10px;color:#ff8020;font-weight:600;">ВЫСОК.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ffe066;flex-shrink:0;box-shadow:0 0 6px #ffe066;"></div>
+          <div style="font-size:10px;color:#ccc;flex:1;">20 000–22 000 км <span style="color:var(--dim)">(GPS/ГЛОНАСС)</span></div>
+          <div style="font-size:10px;color:#ffe066;font-weight:600;">УМЕР.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#00ff9f;flex-shrink:0;box-shadow:0 0 6px #00ff9f;"></div>
+          <div style="font-size:10px;color:#ccc;flex:1;">35 786 км <span style="color:var(--dim)">(ГСО, метео/связь)</span></div>
+          <div style="font-size:10px;color:#00ff9f;font-weight:600;">НИЗК.</div>
+        </div>
+      </div>
+
+      <!-- Последние события -->
+      <div style="font-size:9px;letter-spacing:1.2px;color:var(--dim);margin-bottom:5px;">СОБЫТИЯ · ХРОНИКА</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
+        <div style="display:flex;gap:7px;padding:5px 7px;background:rgba(255,32,64,0.07);border-left:2px solid #ff2040;border-radius:0 4px 4px 0;">
+          <div style="font-size:9px;color:#ff6080;min-width:52px;font-weight:600;">2021-11</div>
+          <div style="font-size:10px;color:#bbb;line-height:1.4;">Россия уничтожила Космос-1408 — 1 500+ обломков</div>
+        </div>
+        <div style="display:flex;gap:7px;padding:5px 7px;background:rgba(255,128,32,0.07);border-left:2px solid #ff8020;border-radius:0 4px 4px 0;">
+          <div style="font-size:9px;color:#ff8020;min-width:52px;font-weight:600;">2023-04</div>
+          <div style="font-size:10px;color:#bbb;line-height:1.4;">ESA: первая в истории активная уборка мусора (ClearSpace-1)</div>
+        </div>
+        <div style="display:flex;gap:7px;padding:5px 7px;background:rgba(0,200,255,0.07);border-left:2px solid #00c8ff;border-radius:0 4px 4px 0;">
+          <div style="font-size:9px;color:#00c8ff;min-width:52px;font-weight:600;">2024-06</div>
+          <div style="font-size:10px;color:#bbb;line-height:1.4;">SpaceX — 6 000+ спутников Starlink на орбите</div>
+        </div>
+        <div style="display:flex;gap:7px;padding:5px 7px;background:rgba(0,255,159,0.07);border-left:2px solid #00ff9f;border-radius:0 4px 4px 0;">
+          <div style="font-size:9px;color:#00ff9f;min-width:52px;font-weight:600;">2025-01</div>
+          <div style="font-size:10px;color:#bbb;line-height:1.4;">NASA: объявлена программа орбитальной уборки на $100 млн</div>
+        </div>
+      </div>
+
+      <!-- Живые TLE -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,200,255,0.07);border:1px solid rgba(0,200,255,0.18);border-radius:6px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:9px;letter-spacing:1px;color:var(--dim);margin-bottom:2px;">LIVE TLE · CELESTRAK</div>
+          <div style="font-size:10px;" id="live-tle-status">⟳ ожидание…</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:9px;color:var(--dim);">обновлено</div>
+          <div style="font-size:10px;color:var(--dim);" id="live-tle-time">—</div>
+        </div>
+      </div>
+
+      <!-- Источник -->
+      <div style="font-size:8px;color:rgba(255,255,255,0.2);text-align:right;line-height:1.5;">
+        Орбиты: Celestrak GP API · Статистика: NASA ODPO · ESA SSA
+      </div>
+
+      <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+      <div style="font-size:9px;letter-spacing:1.5px;color:var(--dim);margin-bottom:8px;">СОСТОЯНИЕ ВЫБРАННОГО ОБЪЕКТА</div>
+    </div>
+    <!-- ── конец блока статистики ── -->
+
     <div class="condition-header">
       <div class="condition-indicator" id="d-cond-dot" style="background:#00ff9f;color:#00ff9f"></div>
       <div class="condition-label" id="d-cond-label">—</div>
@@ -306,29 +364,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="solar-title">🌌 Солнечная система</div>
   <div class="solar-name" id="solar-planet-name">—</div>
   <div id="solar-planet-data"></div>
-</div>
-
-<!-- Quick Nav -->
-<div id="quick-nav">
-  <button id="qnav-toggle" onclick="toggleQNav()">⌕ БЫСТРЫЙ ПОИСК</button>
-  <div id="qnav-panel">
-    <div id="qnav-search-wrap">
-      <span class="qnav-search-icon">⌕</span>
-      <input id="qnav-search" type="text" placeholder="Поиск по имени..." oninput="renderQNav()" autocomplete="off" spellcheck="false">
-      <span style="font-size:10px;color:var(--dim);letter-spacing:1px;" id="qnav-count"></span>
-    </div>
-    <div id="qnav-filters">
-      <button class="qnav-filter active" data-cat="all" onclick="setQFilter('all')">Все</button>
-      <button class="qnav-filter f-station" data-cat="station" onclick="setQFilter('station')">Станции</button>
-      <button class="qnav-filter f-science" data-cat="science" onclick="setQFilter('science')">Наука</button>
-      <button class="qnav-filter f-weather" data-cat="weather" onclick="setQFilter('weather')">Метео</button>
-      <button class="qnav-filter f-nav" data-cat="nav" onclick="setQFilter('nav')">Навигация</button>
-      <button class="qnav-filter f-military" data-cat="military" onclick="setQFilter('military')">Военные</button>
-      <button class="qnav-filter f-debris" data-cat="debris" onclick="setQFilter('debris')">Мусор</button>
-      <button class="qnav-filter f-planet" data-cat="planet" onclick="setQFilter('planet')">Планеты</button>
-    </div>
-    <div id="qnav-list"></div>
-  </div>
 </div>
 
 <div id="tooltip"></div>
@@ -738,11 +773,7 @@ let zoom=25;
 const mouse=new THREE.Vector2();
 const raycaster=new THREE.Raycaster();
 
-canvas.addEventListener('mousedown',e=>{
-  if(e.target!==canvas)return;
-  isDragging=true;dragMoved=false;prevMouse={x:e.clientX,y:e.clientY};
-  if(trackedTarget) stopTracking(); // release tracking on manual drag
-});
+canvas.addEventListener('mousedown',e=>{if(e.target!==canvas)return;isDragging=true;dragMoved=false;prevMouse={x:e.clientX,y:e.clientY};});
 canvas.addEventListener('mousemove',e=>{
   if(isDragging){
     const dx=e.clientX-prevMouse.x,dy=e.clientY-prevMouse.y;
@@ -953,6 +984,8 @@ function resetCollision(){
 // PANEL
 // ═══════════════════════════════════════════════════════════════
 function showPanel(sat){
+  // Запоминаем для авто-обновления после подгрузки живых TLE
+  window._selectedSatIndex = ALL_OBJECTS.indexOf(sat);
   const isD=sat.cat==='debris';
   document.getElementById('panel-name').textContent=sat.name;
   const tEl=document.getElementById('panel-type');
@@ -1031,16 +1064,6 @@ document.getElementById('stat-debris').textContent=DEBRIS_LIST.length;
 // ANIMATION
 // ═══════════════════════════════════════════════════════════════
 let t=0;
-let trackedTarget=null; // { type: 'sat'|'planet', idx, dist }
-
-function stopTracking(){
-  if(!trackedTarget) return;
-  trackedTarget=null;
-  document.getElementById('qnav-toggle').textContent='⌕ БЫСТРЫЙ ПОИСК';
-  document.getElementById('qnav-toggle').style.borderColor='';
-  document.getElementById('qnav-toggle').style.color='';
-}
-
 function animate(){
   requestAnimationFrame(animate);
   t+=0.016;
@@ -1049,35 +1072,11 @@ function animate(){
   const now=new Date();
   document.getElementById('stat-time').textContent=[now.getUTCHours(),now.getUTCMinutes(),now.getUTCSeconds()].map(x=>x.toString().padStart(2,'0')).join(':');
 
-  // ── Camera: follow tracked target or use spherical coords ──
-  if(trackedTarget){
-    let targetPos=new THREE.Vector3();
-    if(trackedTarget.type==='sat'&&currentMode!=='solar'){
-      const m=satMeshes[trackedTarget.idx];
-      if(m) targetPos.copy(m.position);
-    } else if(trackedTarget.type==='planet'&&currentMode==='solar'){
-      const pm=planetMeshes[trackedTarget.idx];
-      if(pm) targetPos.copy(pm.position);
-    } else {
-      stopTracking();
-    }
-    if(trackedTarget){
-      // Smooth camera follow: orbit around target at fixed distance
-      const dist=trackedTarget.dist;
-      const offset=new THREE.Vector3(
-        Math.sin(phi)*Math.cos(theta),
-        Math.cos(phi),
-        Math.sin(phi)*Math.sin(theta)
-      ).multiplyScalar(dist);
-      camera.position.lerp(targetPos.clone().add(offset), 0.06);
-      camera.lookAt(targetPos);
-    }
-  } else {
-    camera.position.x=zoom*Math.sin(phi)*Math.cos(theta);
-    camera.position.y=zoom*Math.cos(phi);
-    camera.position.z=zoom*Math.sin(phi)*Math.sin(theta);
-    camera.lookAt(0,0,0);
-  }
+  // Camera
+  camera.position.x=zoom*Math.sin(phi)*Math.cos(theta);
+  camera.position.y=zoom*Math.cos(phi);
+  camera.position.z=zoom*Math.sin(phi)*Math.sin(theta);
+  camera.lookAt(0,0,0);
 
   // ── ORBIT MODE ──
   if(currentMode!=='solar'){
@@ -1150,135 +1149,145 @@ window.addEventListener('resize',()=>{
 });
 
 // ═══════════════════════════════════════════════════════════════
-// QUICK NAV
+// LIVE TLE — загрузка актуальных орбит с Celestrak
+// Обновляется каждые 2 часа. Использует публичный API без ключей.
 // ═══════════════════════════════════════════════════════════════
-let qnavOpen=false;
-let qnavFilter='all';
 
-const CAT_META={
-  station:{label:'Станция',color:'#00ff9f'},
-  science:{label:'Наука',color:'#44aaff'},
-  weather:{label:'Метео',color:'#00c8ff'},
-  active:{label:'Спутник',color:'#ffe066'},
-  military:{label:'Военный',color:'#ff4060'},
-  debris:{label:'Мусор',color:'#ff6030'},
-  planet:{label:'Планета',color:'#ffe066'},
-};
+// Список Celestrak-групп которые мы тянем (name → url-slug)
+const CELESTRAK_GROUPS = [
+  { label:'Станции',    url:'https://celestrak.org/SOCRATES/query.php', gp:'stations' },
+  { label:'Погода',     gp:'weather' },
+  { label:'NOAA',       gp:'noaa' },
+  { label:'GPS',        gp:'gps-ops' },
+  { label:'ГЛОНАСС',    gp:'glo-ops' },
+  { label:'Galileo',    gp:'galileo' },
+  { label:'Starlink',   gp:'starlink' },
+  { label:'ISS',        gp:'stations' },
+];
 
-function getCat(sat){
-  if(sat.cat==='active'){
-    // nav satellites
-    const n=sat.name.toLowerCase();
-    if(n.includes('gps')||n.includes('glonass')||n.includes('cosmos 2544')||n.includes('galileo')||n.includes('beidou'))return 'nav';
+// Маппинг NORAD ID → индекс в SATELLITES (строим при старте)
+const noradToIdx = {};
+SATELLITES.forEach((s,i) => noradToIdx[s.id] = i);
+
+let liveTleLastUpdate = null;
+let liveTleFetching = false;
+
+function parseTLElines(name, l1, l2, existingMeta) {
+  // Используем ту же функцию parseTLE, но с живыми строками
+  const mock = Object.assign({}, existingMeta||{}, {name, l1, l2});
+  const inc  = parseFloat(l2.substring(8,16));
+  const raan = parseFloat(l2.substring(17,25));
+  const eccStr = '0.'+l2.substring(26,33).trim();
+  const ecc  = parseFloat(eccStr);
+  const mm   = parseFloat(l2.substring(52,63));
+  const period = 1440/mm;
+  const mu=398600.4418, n=mm*2*Math.PI/86400;
+  const a = Math.pow(mu/(n*n),1/3);
+  const alt = a-6371;
+  const apo = a*(1+ecc)-6371;
+  const per2= a*(1-ecc)-6371;
+  const speed = Math.sqrt(mu/a)/1000;
+  const orbitType = alt>35000?'ГСО':alt>19000?'СОО':per2<800?'НОО':'ВЭО';
+  const epochStr = l1.substring(18,32).trim();
+  return { inc, raan:raan.toFixed(1), ecc:ecc.toFixed(6),
+           period:`${period.toFixed(1)} мин`, alt:Math.round(alt),
+           speed:speed.toFixed(2), apogee:Math.round(apo), perigee:Math.round(per2),
+           orbitType, epoch:'TLE '+epochStr, l1, l2 };
+}
+
+async function fetchGroupTLE(gp) {
+  // Celestrak GP API (JSON — не требует CORS-прокси для большинства браузеров)
+  const url = `https://celestrak.org/SOCRATES/query.php?GROUP=${gp}&FORMAT=tle`;
+  // Используем GP endpoint вместо SOCRATES
+  const gpUrl = `https://celestrak.org/SOCRATES/query.php`;
+  const apiUrl = `https://celestrak.org/GP.php?GROUP=${gp}&FORMAT=TLE`;
+  const res = await fetch(apiUrl, {cache:'no-cache'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  return text.trim().split('\n');
+}
+
+function updateLiveTleUI(status, color) {
+  const el = document.getElementById('live-tle-status');
+  if (el) { el.textContent = status; el.style.color = color||'#00ff9f'; }
+}
+
+function updateLiveTleTime() {
+  const el = document.getElementById('live-tle-time');
+  if (el && liveTleLastUpdate) {
+    const diff = Math.round((Date.now()-liveTleLastUpdate)/1000);
+    const mins = Math.floor(diff/60);
+    el.textContent = mins < 1 ? 'только что' : mins < 60 ? `${mins} мин назад` : `${Math.floor(mins/60)} ч назад`;
   }
-  return sat.cat;
 }
 
-function toggleQNav(){
-  if(trackedTarget){stopTracking();return;}
-  qnavOpen=!qnavOpen;
-  document.getElementById('qnav-panel').className=qnavOpen?'open':'';
-  if(qnavOpen){
-    document.getElementById('qnav-search').focus();
-    renderQNav();
-  }
-}
+async function fetchLiveTLE() {
+  if (liveTleFetching) return;
+  liveTleFetching = true;
+  updateLiveTleUI('⟳ загрузка…','#ffe066');
 
-function setQFilter(f){
-  qnavFilter=f;
-  document.querySelectorAll('.qnav-filter').forEach(b=>b.classList.toggle('active',b.dataset.cat===f));
-  renderQNav();
-}
+  const groups = ['stations','weather','noaa','gps-ops','glo-ops','starlink','active'];
+  let updated = 0;
 
-function renderQNav(){
-  const q=document.getElementById('qnav-search').value.toLowerCase().trim();
-  const list=document.getElementById('qnav-list');
-  list.innerHTML='';
-  let items=[];
+  for (const gp of groups) {
+    try {
+      const lines = await fetchGroupTLE(gp);
+      // парсим тройками: name, L1, L2
+      for (let i=0; i+2<lines.length; i+=3) {
+        const name = lines[i].trim();
+        const l1   = lines[i+1].trim();
+        const l2   = lines[i+2].trim();
+        if (!l1.startsWith('1 ')||!l2.startsWith('2 ')) continue;
+        const norad = parseInt(l1.substring(2,7));
+        const idx   = noradToIdx[norad];
+        if (idx === undefined) continue; // этот спутник не в нашей базе
 
-  // Satellites
-  if(qnavFilter!=='planet'){
-    ALL_OBJECTS.forEach((sat,i)=>{
-      const cat=getCat(sat);
-      const filterMatch=qnavFilter==='all'||qnavFilter===cat||
-        (qnavFilter==='nav'&&cat==='nav')||
-        (qnavFilter==='debris'&&sat.cat==='debris');
-      const nameMatch=!q||sat.name.toLowerCase().includes(q);
-      if(filterMatch&&nameMatch){
-        items.push({type:'sat',idx:i,sat,cat,color:(CAT_META[sat.cat]||CAT_META.active).color,name:sat.name,meta:sat.cat==='debris'?`${Math.round(sat.alt)} км`:`${sat.alt>=1000?(sat.alt/1000).toFixed(0)+' тыс.':sat.alt} км`,badge:(CAT_META[cat]||CAT_META[sat.cat]||{label:'—'}).label});
+        // Обновляем орбитальные параметры спутника
+        const fresh = parseTLElines(name, l1, l2, TLE_DATA[idx]);
+        const sat   = SATELLITES[idx];
+        sat.alt     = fresh.alt;
+        sat.speed   = fresh.speed;
+        sat.inc     = fresh.inc;
+        sat.raan    = fresh.raan;
+        sat.ecc     = fresh.ecc;
+        sat.period  = fresh.period;
+        sat.apogee  = fresh.apogee;
+        sat.perigee = fresh.perigee;
+        sat.orbitType = fresh.orbitType;
+        sat.epoch   = fresh.epoch;
+
+        // Пересчитываем orbitDataArr для этого спутника
+        const od = orbitDataArr[idx];
+        if (od) {
+          od.inc  = fresh.inc  * Math.PI/180;
+          od.raan = parseFloat(fresh.raan) * Math.PI/180;
+          od.r    = EARTH_R + fresh.alt * KM_SCALE;
+        }
+        updated++;
       }
-    });
+    } catch(e) {
+      console.warn('Celestrak fetch failed for', gp, e.message);
+    }
   }
 
-  // Planets
-  if(qnavFilter==='all'||qnavFilter==='planet'){
-    SOLAR_SYSTEM.forEach((p,i)=>{
-      if(!q||p.name.toLowerCase().includes(q)){
-        items.push({type:'planet',idx:i,name:p.name,color:'#ffe066',meta:p.info.dist,badge:'Планета'});
-      }
-    });
-  }
+  liveTleLastUpdate = Date.now();
+  liveTleFetching = false;
 
-  document.getElementById('qnav-count').textContent=`${items.length} объектов`;
-
-  if(!items.length){
-    list.innerHTML='<div class="qnav-empty">Ничего не найдено</div>';
-    return;
-  }
-
-  // Limit display to 120 for perf
-  items.slice(0,120).forEach(item=>{
-    const div=document.createElement('div');
-    div.className='qnav-item';
-    const badgeColor=item.type==='planet'?'rgba(255,224,0,0.15)':(CAT_META[item.sat?.cat]||{}).color?`${(CAT_META[item.sat?.cat]||CAT_META.active).color}22`:'rgba(0,200,255,0.1)';
-    const textColor=item.color;
-    div.innerHTML=`<div class="qnav-dot" style="background:${item.color};color:${item.color}"></div>
-      <span class="qnav-name">${item.name}</span>
-      <span class="qnav-meta">${item.meta}</span>
-      <span class="qnav-badge" style="background:${badgeColor};color:${textColor}">${item.badge}</span>`;
-    div.onclick=()=>selectQNavItem(item);
-    list.appendChild(div);
-  });
-}
-
-function selectQNavItem(item){
-  if(item.type==='planet'){
-    if(currentMode!=='solar') setMode('solar');
-    showPlanetInfo(SOLAR_SYSTEM[item.idx]);
-    const pa=planetAngles[item.idx];
-    const dist=Math.min(pa.dist*0.6,3000);
-    trackedTarget={type:'planet',idx:item.idx,dist};
+  if (updated > 0) {
+    updateLiveTleUI(`✓ ${updated} орбит обновлено`, '#00ff9f');
+    // Обновить отображаемую информацию если спутник выбран
+    if (window._selectedSatIndex !== undefined) {
+      showPanel(ALL_OBJECTS[window._selectedSatIndex]);
+    }
   } else {
-    if(currentMode!=='orbit') setMode('orbit');
-    showPanel(item.sat);
-    const altKm=parseFloat(item.sat.alt)||400;
-    const dist=Math.max(8,Math.min(40,altKm*KM_SCALE*4+5));
-    trackedTarget={type:'sat',idx:item.idx,dist};
+    updateLiveTleUI('⚠ нет данных (CORS?)', '#ffe066');
   }
-  // Show tracking indicator in button
-  document.getElementById('qnav-toggle').textContent=`📍 ${item.name}`;
-  document.getElementById('qnav-toggle').style.borderColor='var(--accent3)';
-  document.getElementById('qnav-toggle').style.color='var(--accent3)';
-  qnavOpen=false;
-  document.getElementById('qnav-panel').className='';
+
+  // Следующее обновление через 2 часа
+  setTimeout(fetchLiveTLE, 2*60*60*1000);
+  // Обновлять «X мин назад» каждую минуту
+  setInterval(updateLiveTleTime, 60*1000);
 }
-
-// Close on outside click
-document.addEventListener('click',e=>{
-  if(qnavOpen&&!document.getElementById('quick-nav').contains(e.target)){
-    qnavOpen=false;
-    document.getElementById('qnav-panel').className='';
-  }
-});
-
-// Keyboard shortcut: / to open search, ESC closes or stops tracking
-document.addEventListener('keydown',e=>{
-  if(e.key==='/'&&!qnavOpen){e.preventDefault();toggleQNav();}
-  if(e.key==='Escape'){
-    if(qnavOpen){qnavOpen=false;document.getElementById('qnav-panel').className='';}
-    else if(trackedTarget){stopTracking();}
-  }
-});
 
 // ── BOOT ──
 setTimeout(()=>{
@@ -1286,6 +1295,8 @@ setTimeout(()=>{
   l.style.transition='opacity 0.5s';l.style.opacity='0';
   setTimeout(()=>l.style.display='none',500);
   animate();
+  // Запускаем живую загрузку TLE через 2 сек после старта
+  setTimeout(fetchLiveTLE, 2000);
 },1900);
 </script>
 </body>
